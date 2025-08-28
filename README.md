@@ -1,5 +1,8 @@
 # VW T6.1 CAN Scanner - ESPHome Project
 
+> **⚠️ DISCLAIMER: AI CODING EXPERIMENT**  
+> This is an experimental AI-generated project and is **NOT FUNCTIONAL CODE YET**. The configurations, decoder rules, and integration examples are created as a proof-of-concept and require extensive testing, validation, and customization before use. Do not attempt to connect to any vehicle systems without proper expertise and thorough validation.
+
 Simple ESP32-based CAN bus monitor for VW T6.1 California, integrated with Home Assistant.
 
 ## 🚗 What It Does
@@ -125,16 +128,22 @@ Found CAN IDs for your T6.1? Please contribute!
 3. Submit via GitHub PR
 4. Help build the community database
 
-## ⚖️ Legal
+## ⚖️ Legal & Liability
 
 - **Research/hobby use only**
-- **No warranty** - use at your own risk
+- **NO WARRANTY OR LIABILITY** - You assume all risks when using this experimental code
+- **VEHICLE DAMAGE DISCLAIMER** - The authors and contributors bear NO RESPONSIBILITY for any damage to your vehicle, warranty voidance, or safety issues that may result from using this project
+- **Use at your own risk** - This includes but is not limited to: electrical damage, ECU malfunction, vehicle breakdown, or safety system interference
 - **Respect local laws** regarding vehicle modifications
-- **CAN bus interference** can cause serious issues - be careful!
+- **CAN bus interference** can cause serious issues including complete vehicle failure - proceed with extreme caution!
 
 ## 📜 License
 
 MIT License - See LICENSE file for details
+
+## 🙏 Credits
+
+This project was developed using **[BMAD (Business Methodology for Agile Development)](https://github.com/bmad-sim/bmad-ecosystem)** - a comprehensive AI-assisted development framework that enables rapid prototyping and systematic project architecture.
 
 ---
 
