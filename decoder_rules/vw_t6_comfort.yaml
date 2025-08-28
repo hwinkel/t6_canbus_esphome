@@ -1,0 +1,472 @@
+# VW T6.1 Comfort CAN Bus Decoder Rules
+# Version: 1.0
+# 
+# These rules map CAN messages to Home Assistant entities
+# Validated for: VW T6.1 California (2024)
+#
+# Format:
+# - can_id: CAN message ID (hex)
+# - mask: Optional ID mask for filtering
+# - name: Human-readable signal name
+# - entity_type: sensor|binary_sensor|light|switch
+# - byte_offset: Starting byte (0-7)
+# - bit_offset: Starting bit within byte (0-7)
+# - bit_length: Number of bits to extract
+# - scale: Multiplication factor
+# - offset: Addition offset (applied after scale)
+# - unit: Unit of measurement
+# - signed: true if value is signed integer
+
+decoder_rules:
+  # Interior Lighting Control (BCM)
+  - can_id: 0x3B0
+    name: "interior_led_brightness"
+    entity_type: sensor
+    byte_offset: 3
+    bit_offset: 0
+    bit_length: 8
+    scale: 0.392156  # 0-255 to 0-100%
+    offset: 0
+    unit: "%"
+    signed: false
+    description: "Main cabin LED brightness level"
+    
+  - can_id: 0x3B0
+    name: "interior_lights_on"
+    entity_type: binary_sensor
+    byte_offset: 2
+    bit_offset: 0
+    bit_length: 1
+    description: "Interior lights power state"
+    
+  - can_id: 0x3B0
+    name: "reading_light_left"
+    entity_type: binary_sensor
+    byte_offset: 2
+    bit_offset: 1
+    bit_length: 1
+    description: "Left reading light state"
+    
+  - can_id: 0x3B0
+    name: "reading_light_right"
+    entity_type: binary_sensor
+    byte_offset: 2
+    bit_offset: 2
+    bit_length: 1
+    description: "Right reading light state"
+
+  # Ambient/Mood Lighting
+  - can_id: 0x3B2
+    name: "ambient_light_color"
+    entity_type: sensor
+    byte_offset: 4
+    bit_offset: 0
+    bit_length: 8
+    scale: 1
+    offset: 0
+    unit: "index"
+    description: "Ambient light color index (0-10)"
+    
+  - can_id: 0x3B2
+    name: "ambient_brightness"
+    entity_type: sensor
+    byte_offset: 5
+    bit_offset: 0
+    bit_length: 8
+    scale: 0.392156
+    offset: 0
+    unit: "%"
+    description: "Ambient light brightness"
+
+  # Dometic Fridge Control (CFX3 or similar)
+  - can_id: 0x5A0
+    name: "fridge_temperature_actual"
+    entity_type: sensor
+    byte_offset: 2
+    bit_offset: 0
+    bit_length: 16
+    scale: 0.1
+    offset: -273.1  # Kelvin to Celsius
+    unit: "°C"
+    signed: false
+    endian: big
+    description: "Current fridge temperature"
+    
+  - can_id: 0x5A0
+    name: "fridge_temperature_setpoint"
+    entity_type: sensor
+    byte_offset: 4
+    bit_offset: 0
+    bit_length: 16
+    scale: 0.1
+    offset: -273.1
+    unit: "°C"
+    signed: false
+    endian: big
+    description: "Target fridge temperature"
+    
+  - can_id: 0x5A1
+    name: "fridge_compressor_on"
+    entity_type: binary_sensor
+    byte_offset: 0
+    bit_offset: 0
+    bit_length: 1
+    description: "Fridge compressor running"
+    
+  - can_id: 0x5A1
+    name: "fridge_power_mode"
+    entity_type: sensor
+    byte_offset: 1
+    bit_offset: 0
+    bit_length: 2
+    scale: 1
+    offset: 0
+    description: "0=Off, 1=Eco, 2=Normal, 3=Max"
+
+  # Auxiliary Battery System
+  - can_id: 0x671
+    name: "aux_battery_voltage"
+    entity_type: sensor
+    byte_offset: 0
+    bit_offset: 0
+    bit_length: 16
+    scale: 0.001
+    offset: 0
+    unit: "V"
+    signed: false
+    endian: big
+    description: "Auxiliary battery voltage"
+    
+  - can_id: 0x671
+    name: "aux_battery_current"
+    entity_type: sensor
+    byte_offset: 2
+    bit_offset: 0
+    bit_length: 16
+    scale: 0.1
+    offset: -3200  # Centered at 0A
+    unit: "A"
+    signed: true
+    endian: big
+    description: "Auxiliary battery current (+ charging, - discharging)"
+    
+  - can_id: 0x671
+    name: "aux_battery_soc"
+    entity_type: sensor
+    byte_offset: 4
+    bit_offset: 0
+    bit_length: 8
+    scale: 1
+    offset: 0
+    unit: "%"
+    signed: false
+    description: "Auxiliary battery state of charge"
+    
+  - can_id: 0x672
+    name: "split_charge_relay"
+    entity_type: binary_sensor
+    byte_offset: 0
+    bit_offset: 3
+    bit_length: 1
+    description: "Split charge relay engaged"
+
+  # Climate Control
+  - can_id: 0x420
+    name: "interior_temperature"
+    entity_type: sensor
+    byte_offset: 1
+    bit_offset: 0
+    bit_length: 8
+    scale: 0.5
+    offset: -40
+    unit: "°C"
+    signed: false
+    description: "Cabin interior temperature"
+    
+  - can_id: 0x420
+    name: "exterior_temperature"
+    entity_type: sensor
+    byte_offset: 2
+    bit_offset: 0
+    bit_length: 8
+    scale: 0.5
+    offset: -40
+    unit: "°C"
+    signed: false
+    description: "Outside temperature"
+    
+  - can_id: 0x421
+    name: "heater_on"
+    entity_type: binary_sensor
+    byte_offset: 0
+    bit_offset: 0
+    bit_length: 1
+    description: "Auxiliary heater active"
+    
+  - can_id: 0x421
+    name: "heater_fan_speed"
+    entity_type: sensor
+    byte_offset: 1
+    bit_offset: 0
+    bit_length: 4
+    scale: 1
+    offset: 0
+    description: "Heater fan speed (0-10)"
+
+  # Awning Control (if fitted)
+  - can_id: 0x4A0
+    name: "awning_position"
+    entity_type: sensor
+    byte_offset: 2
+    bit_offset: 0
+    bit_length: 8
+    scale: 0.392156
+    offset: 0
+    unit: "%"
+    signed: false
+    description: "Awning extension percentage"
+    
+  - can_id: 0x4A0
+    name: "awning_moving"
+    entity_type: binary_sensor
+    byte_offset: 0
+    bit_offset: 1
+    bit_length: 1
+    description: "Awning motor active"
+    
+  - can_id: 0x4A0
+    name: "awning_wind_alarm"
+    entity_type: binary_sensor
+    byte_offset: 0
+    bit_offset: 7
+    bit_length: 1
+    description: "Wind sensor triggered"
+
+  # Pop-Top Roof Status
+  - can_id: 0x4B0
+    name: "roof_open"
+    entity_type: binary_sensor
+    byte_offset: 0
+    bit_offset: 0
+    bit_length: 1
+    description: "Pop-top roof open"
+    
+  - can_id: 0x4B0
+    name: "roof_locked"
+    entity_type: binary_sensor
+    byte_offset: 0
+    bit_offset: 1
+    bit_length: 1
+    description: "Roof locks engaged"
+
+  # Water System
+  - can_id: 0x510
+    name: "fresh_water_level"
+    entity_type: sensor
+    byte_offset: 0
+    bit_offset: 0
+    bit_length: 8
+    scale: 0.392156
+    offset: 0
+    unit: "%"
+    signed: false
+    description: "Fresh water tank level"
+    
+  - can_id: 0x510
+    name: "grey_water_level"
+    entity_type: sensor
+    byte_offset: 1
+    bit_offset: 0
+    bit_length: 8
+    scale: 0.392156
+    offset: 0
+    unit: "%"
+    signed: false
+    description: "Grey water tank level"
+    
+  - can_id: 0x511
+    name: "water_pump_on"
+    entity_type: binary_sensor
+    byte_offset: 0
+    bit_offset: 0
+    bit_length: 1
+    description: "Water pump running"
+    
+  - can_id: 0x511
+    name: "water_heater_on"
+    entity_type: binary_sensor
+    byte_offset: 0
+    bit_offset: 1
+    bit_length: 1
+    description: "Water heater active"
+
+  # Door and Window Status
+  - can_id: 0x381
+    name: "sliding_door_open"
+    entity_type: binary_sensor
+    byte_offset: 1
+    bit_offset: 2
+    bit_length: 1
+    description: "Side sliding door open"
+    
+  - can_id: 0x381
+    name: "rear_hatch_open"
+    entity_type: binary_sensor
+    byte_offset: 1
+    bit_offset: 3
+    bit_length: 1
+    description: "Rear hatch/tailgate open"
+    
+  - can_id: 0x381
+    name: "pop_out_window_left"
+    entity_type: binary_sensor
+    byte_offset: 2
+    bit_offset: 0
+    bit_length: 1
+    description: "Left pop-out window open"
+    
+  - can_id: 0x381
+    name: "pop_out_window_right"
+    entity_type: binary_sensor
+    byte_offset: 2
+    bit_offset: 1
+    bit_length: 1
+    description: "Right pop-out window open"
+
+  # Vehicle Speed and Engine
+  - can_id: 0x1A0
+    name: "vehicle_speed"
+    entity_type: sensor
+    byte_offset: 2
+    bit_offset: 0
+    bit_length: 16
+    scale: 0.01
+    offset: 0
+    unit: "km/h"
+    signed: false
+    endian: big
+    description: "Vehicle speed"
+    
+  - can_id: 0x1A1
+    name: "engine_running"
+    entity_type: binary_sensor
+    byte_offset: 0
+    bit_offset: 0
+    bit_length: 1
+    description: "Engine is running"
+    
+  - can_id: 0x1A1
+    name: "ignition_on"
+    entity_type: binary_sensor
+    byte_offset: 0
+    bit_offset: 1
+    bit_length: 1
+    description: "Ignition switch on"
+
+  # Parking Sensors (if fitted)
+  - can_id: 0x6C0
+    name: "parking_sensor_front_left"
+    entity_type: sensor
+    byte_offset: 0
+    bit_offset: 0
+    bit_length: 8
+    scale: 10
+    offset: 0
+    unit: "mm"
+    signed: false
+    description: "Front left parking distance"
+    
+  - can_id: 0x6C0
+    name: "parking_sensor_front_right"
+    entity_type: sensor
+    byte_offset: 1
+    bit_offset: 0
+    bit_length: 8
+    scale: 10
+    offset: 0
+    unit: "mm"
+    signed: false
+    description: "Front right parking distance"
+    
+  - can_id: 0x6C0
+    name: "parking_sensor_rear_left"
+    entity_type: sensor
+    byte_offset: 2
+    bit_offset: 0
+    bit_length: 8
+    scale: 10
+    offset: 0
+    unit: "mm"
+    signed: false
+    description: "Rear left parking distance"
+    
+  - can_id: 0x6C0
+    name: "parking_sensor_rear_right"
+    entity_type: sensor
+    byte_offset: 3
+    bit_offset: 0
+    bit_length: 8
+    scale: 10
+    offset: 0
+    unit: "mm"
+    signed: false
+    description: "Rear right parking distance"
+
+# Control Commands (TX when armed)
+control_commands:
+  # Interior LED brightness control
+  - name: "set_interior_brightness"
+    can_id: 0x3B0
+    description: "Control interior LED brightness"
+    data_template:
+      - 0x00  # Byte 0: Reserved
+      - 0x00  # Byte 1: Reserved
+      - 0x01  # Byte 2: Light on flag
+      - "{brightness}"  # Byte 3: Brightness (0-255)
+      - 0x00  # Byte 4: Reserved
+      - 0x00  # Byte 5: Reserved
+      - 0x00  # Byte 6: Reserved
+      - 0x00  # Byte 7: Reserved
+    
+  # Fridge temperature setpoint
+  - name: "set_fridge_temperature"
+    can_id: 0x5A2
+    description: "Set fridge target temperature"
+    data_template:
+      - 0x01  # Byte 0: Command type
+      - "{temp_high}"  # Byte 1: Temperature high byte
+      - "{temp_low}"   # Byte 2: Temperature low byte
+      - 0x00  # Byte 3-7: Reserved
+      - 0x00
+      - 0x00
+      - 0x00
+      - 0x00
+
+# Filter Presets
+filter_presets:
+  lighting:
+    description: "Lighting related messages"
+    can_ids: [0x3B0, 0x3B1, 0x3B2]
+    
+  climate:
+    description: "Climate and fridge messages"
+    can_ids: [0x420, 0x421, 0x5A0, 0x5A1, 0x5A2]
+    
+  power:
+    description: "Battery and power messages"
+    can_ids: [0x671, 0x672]
+    
+  comfort:
+    description: "Awning, roof, water"
+    can_ids: [0x4A0, 0x4B0, 0x510, 0x511]
+    
+  vehicle:
+    description: "Vehicle status messages"
+    can_ids: [0x1A0, 0x1A1, 0x381, 0x6C0]
+
+# Notes for community contributors:
+# - Test new rules in LISTEN_ONLY mode first
+# - Verify scaling and units with multimeter where possible
+# - Document the source/function of each CAN ID
+# - Include vehicle model year and variant
+# - Submit via GitHub PR with test data

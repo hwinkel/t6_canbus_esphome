@@ -1,0 +1,237 @@
+# VW T6.1 CAN Scanner - Simple ESPHome Configuration
+# Uses only built-in ESPHome components and lambdas
+# No custom C++ components needed!
+
+substitutions:
+  device_name: t6-can-scanner
+  friendly_name: "VW T6.1 CAN Scanner"
+
+esphome:
+  name: ${device_name}
+  friendly_name: ${friendly_name}
+  platform: ESP32
+  board: esp32dev
+
+# Enable logging
+logger:
+  level: DEBUG
+  logs:
+    canbus: DEBUG
+
+# Enable Home Assistant API
+api:
+  encryption:
+    key: !secret api_encryption_key
+
+# OTA updates
+ota:
+  - platform: esphome
+    password: !secret ota_password
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  ap:
+    ssid: "${device_name}-setup"
+    password: !secret ap_password
+
+# Web server for debugging
+web_server:
+  port: 80
+
+# CAN Bus using built-in ESP32 CAN (TWAI)
+canbus:
+  - platform: esp32_can
+    id: can_bus
+    tx_pin: GPIO27  # For LILYGO T-CAN485
+    rx_pin: GPIO26  # For LILYGO T-CAN485
+    can_id: 0
+    bit_rate: 500kbps
+    
+    on_frame:
+    - can_id: 0x3B0  # Interior lighting
+      then:
+        - lambda: |-
+            if (x.size() >= 4) {
+              // Byte 3 contains brightness (0-255)
+              float brightness = x[3] * 100.0 / 255.0;
+              id(interior_brightness).publish_state(brightness);
+              
+              // Byte 2 bit 0 is lights on/off
+              bool lights_on = (x[2] & 0x01) != 0;
+              id(interior_lights_on).publish_state(lights_on);
+            }
+            
+    - can_id: 0x5A0  # Fridge temperature
+      then:
+        - lambda: |-
+            if (x.size() >= 6) {
+              // Bytes 2-3: Current temp (big endian, 0.1K resolution)
+              uint16_t temp_raw = (x[2] << 8) | x[3];
+              float temp_c = (temp_raw * 0.1) - 273.15;
+              id(fridge_temp_actual).publish_state(temp_c);
+              
+              // Bytes 4-5: Setpoint temp
+              uint16_t setpoint_raw = (x[4] << 8) | x[5];
+              float setpoint_c = (setpoint_raw * 0.1) - 273.15;
+              id(fridge_temp_setpoint).publish_state(setpoint_c);
+            }
+            
+    - can_id: 0x671  # Auxiliary battery
+      then:
+        - lambda: |-
+            if (x.size() >= 5) {
+              // Bytes 0-1: Voltage (mV, big endian)
+              uint16_t voltage_mv = (x[0] << 8) | x[1];
+              float voltage = voltage_mv / 1000.0;
+              id(aux_battery_voltage).publish_state(voltage);
+              
+              // Bytes 2-3: Current (0.1A, signed, offset 3200)
+              int16_t current_raw = (x[2] << 8) | x[3];
+              float current = (current_raw - 3200) * 0.1;
+              id(aux_battery_current).publish_state(current);
+              
+              // Byte 4: State of charge (%)
+              if (x.size() > 4) {
+                id(aux_battery_soc).publish_state(x[4]);
+              }
+            }
+            
+    - can_id: 0x420  # Climate
+      then:
+        - lambda: |-
+            if (x.size() >= 3) {
+              // Byte 1: Interior temp
+              float interior_temp = (x[1] * 0.5) - 40;
+              id(cabin_temperature).publish_state(interior_temp);
+              
+              // Byte 2: Exterior temp
+              float exterior_temp = (x[2] * 0.5) - 40;
+              id(outside_temperature).publish_state(exterior_temp);
+            }
+
+# Sensors for decoded CAN data
+sensor:
+  - platform: template
+    name: "Interior Brightness"
+    id: interior_brightness
+    unit_of_measurement: "%"
+    accuracy_decimals: 0
+    icon: "mdi:brightness-percent"
+    
+  - platform: template
+    name: "Fridge Temperature"
+    id: fridge_temp_actual
+    unit_of_measurement: "°C"
+    accuracy_decimals: 1
+    device_class: temperature
+    icon: "mdi:fridge"
+    
+  - platform: template
+    name: "Fridge Setpoint"
+    id: fridge_temp_setpoint
+    unit_of_measurement: "°C"
+    accuracy_decimals: 1
+    device_class: temperature
+    
+  - platform: template
+    name: "Auxiliary Battery Voltage"
+    id: aux_battery_voltage
+    unit_of_measurement: "V"
+    accuracy_decimals: 2
+    device_class: voltage
+    
+  - platform: template
+    name: "Auxiliary Battery Current"
+    id: aux_battery_current
+    unit_of_measurement: "A"
+    accuracy_decimals: 1
+    device_class: current
+    
+  - platform: template
+    name: "Auxiliary Battery SOC"
+    id: aux_battery_soc
+    unit_of_measurement: "%"
+    accuracy_decimals: 0
+    device_class: battery
+    
+  - platform: template
+    name: "Cabin Temperature"
+    id: cabin_temperature
+    unit_of_measurement: "°C"
+    accuracy_decimals: 1
+    device_class: temperature
+    
+  - platform: template
+    name: "Outside Temperature"
+    id: outside_temperature
+    unit_of_measurement: "°C"
+    accuracy_decimals: 1
+    device_class: temperature
+
+binary_sensor:
+  - platform: template
+    name: "Interior Lights"
+    id: interior_lights_on
+    device_class: light
+
+# Control switches (with safety)
+switch:
+  - platform: template
+    name: "CAN TX Enable"
+    id: can_tx_enable
+    icon: "mdi:shield-lock"
+    optimistic: true
+    restore_mode: ALWAYS_OFF
+    on_turn_on:
+      - logger.log: 
+          level: WARN
+          format: "CAN TX Enabled - Be careful!"
+    on_turn_off:
+      - logger.log:
+          format: "CAN TX Disabled - Safe mode"
+
+# Example control: LED brightness
+number:
+  - platform: template
+    name: "Set Interior Brightness"
+    id: set_interior_brightness
+    min_value: 0
+    max_value: 100
+    step: 1
+    mode: slider
+    unit_of_measurement: "%"
+    on_value:
+      - if:
+          condition:
+            switch.is_on: can_tx_enable
+          then:
+            - canbus.send:
+                canbus_id: can_bus
+                can_id: 0x3B0
+                data: !lambda |-
+                  uint8_t brightness = (uint8_t)(x * 2.55);
+                  return {0x00, 0x00, 0x01, brightness, 0x00, 0x00, 0x00, 0x00};
+          else:
+            - logger.log: "TX disabled - enable CAN TX first"
+
+# Debug text sensor to show raw frames
+text_sensor:
+  - platform: template
+    name: "Last CAN Frame"
+    id: last_can_frame
+    icon: "mdi:message-text"
+
+# Global to track frame rate
+globals:
+  - id: frame_counter
+    type: int
+    initial_value: '0'
+
+# Update frame counter
+interval:
+  - interval: 1s
+    then:
+      - lambda: |-
+          ESP_LOGD("can_stats", "Frames/sec: %d", id(frame_counter));
+          id(frame_counter) = 0;

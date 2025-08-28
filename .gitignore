@@ -1,0 +1,19 @@
+# ESPHome
+esphome/secrets.yaml
+.esphome/
+
+# IDE
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Build artifacts
+*.bin
+*.elf
+
+# Logs
+*.log
