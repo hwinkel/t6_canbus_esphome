@@ -5,6 +5,7 @@
 substitutions:
   device_name: t6-can-scanner
   friendly_name: "VW T6.1 CAN Scanner"
+  can_bit_rate: 500kbps  # Change to 100kbps/125kbps to probe Comfort-CAN
 
 esphome:
   name: ${device_name}
@@ -46,7 +47,7 @@ canbus:
     tx_pin: GPIO27  # For LILYGO T-CAN485
     rx_pin: GPIO26  # For LILYGO T-CAN485
     can_id: 0
-    bit_rate: 500kbps
+    bit_rate: ${can_bit_rate}
     
     on_frame:
     - can_id: 0x3B0  # Interior lighting

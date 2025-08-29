@@ -1,0 +1,204 @@
+# VW T6/T6.1 Comfort CAN — Candidate Decoder Rules (Unverified)
+#
+# Purpose: Provide candidate IDs/bytes to assist discovery and on‑vehicle validation
+# without touching the main rules. DO NOT enable TX based on these.
+#
+# Notes
+# - These mappings are hypotheses gathered from VAG community sources (TX‑Board, etc.)
+#   and cross‑platform patterns; they must be validated on your specific vehicle.
+# - Bit rate: Comfort‑CAN speed varies by platform/year. Older T5/T6 commonly used
+#   100 kbit/s; newer models may differ (e.g., 125/500 kbit/s). Confirm empirically.
+# - Keep entity names with "_candidate" suffix until verified.
+
+decoder_rules:
+  # Body/Lighting (common VAG range 0x300–0x3FF). Interior lights (candidate)
+  - can_id: 0x3B0
+    name: "interior_lights_on_candidate"
+    entity_type: binary_sensor
+    byte_offset: 2
+    bit_offset: 0
+    bit_length: 1
+    description: "Candidate: Interior lights on/off flag (BCM)"
+    source: "Community patterns; validate on T6.1"
+
+  - can_id: 0x3B0
+    name: "interior_led_brightness_candidate"
+    entity_type: sensor
+    byte_offset: 3
+    bit_offset: 0
+    bit_length: 8
+    scale: 0.392156  # 0-255 -> 0-100%
+    offset: 0
+    unit: "%"
+    signed: false
+    description: "Candidate: Main cabin LED brightness"
+    source: "Community patterns; validate on T6.1"
+
+  # Ambient/Mood lighting (candidate)
+  - can_id: 0x3B2
+    name: "ambient_light_color_index_candidate"
+    entity_type: sensor
+    byte_offset: 4
+    bit_offset: 0
+    bit_length: 8
+    scale: 1
+    offset: 0
+    unit: "index"
+    signed: false
+    description: "Candidate: Ambient light color index"
+    source: "Community patterns; validate on T6.1"
+
+  - can_id: 0x3B2
+    name: "ambient_brightness_candidate"
+    entity_type: sensor
+    byte_offset: 5
+    bit_offset: 0
+    bit_length: 8
+    scale: 0.392156
+    offset: 0
+    unit: "%"
+    signed: false
+    description: "Candidate: Ambient light brightness"
+    source: "Community patterns; validate on T6.1"
+
+  # Doors/Locks — 0x371 seen on VAG platforms for door bitfields (candidate)
+  - can_id: 0x371
+    name: "door_bits_raw_b0_candidate"
+    entity_type: sensor
+    byte_offset: 0
+    bit_offset: 0
+    bit_length: 8
+    scale: 1
+    offset: 0
+    unit: "raw"
+    signed: false
+    description: "Candidate: raw door/lock bits (byte 0)"
+    source: "TX-Board CAN-IDs thread; verify mapping/bytes on T6.1"
+
+  - can_id: 0x371
+    name: "door_bits_raw_b1_candidate"
+    entity_type: sensor
+    byte_offset: 1
+    bit_offset: 0
+    bit_length: 8
+    scale: 1
+    offset: 0
+    unit: "raw"
+    signed: false
+    description: "Candidate: raw door/lock bits (byte 1)"
+    source: "TX-Board CAN-IDs thread; verify mapping/bytes on T6.1"
+
+  # Comfort/Body supply voltage — 0x571 example scaling (candidate)
+  - can_id: 0x571
+    name: "comfort_bus_voltage_candidate"
+    entity_type: sensor
+    byte_offset: 1  # Candidate index; confirm exact byte on T6.1
+    bit_offset: 0
+    bit_length: 8
+    scale: 0.5
+    offset: 0
+    unit: "V"
+    signed: false
+    description: "Candidate: Comfort/Body voltage (raw/2 V); confirm byte index"
+    source: "TX-Board CAN-IDs thread (VAG example)"
+
+  # Park Distance Control (candidate — model dependent)
+  - can_id: 0x6C0
+    name: "pdc_front_left_distance_candidate"
+    entity_type: sensor
+    byte_offset: 0
+    bit_offset: 0
+    bit_length: 8
+    scale: 10
+    offset: 0
+    unit: "mm"
+    signed: false
+    description: "Candidate: PDC front-left distance"
+    source: "VAG community patterns; validate on T6.1"
+
+  - can_id: 0x6C0
+    name: "pdc_front_right_distance_candidate"
+    entity_type: sensor
+    byte_offset: 1
+    bit_offset: 0
+    bit_length: 8
+    scale: 10
+    offset: 0
+    unit: "mm"
+    signed: false
+    description: "Candidate: PDC front-right distance"
+    source: "VAG community patterns; validate on T6.1"
+
+  - can_id: 0x6C0
+    name: "pdc_rear_left_distance_candidate"
+    entity_type: sensor
+    byte_offset: 2
+    bit_offset: 0
+    bit_length: 8
+    scale: 10
+    offset: 0
+    unit: "mm"
+    signed: false
+    description: "Candidate: PDC rear-left distance"
+    source: "VAG community patterns; validate on T6.1"
+
+  - can_id: 0x6C0
+    name: "pdc_rear_right_distance_candidate"
+    entity_type: sensor
+    byte_offset: 3
+    bit_offset: 0
+    bit_length: 8
+    scale: 10
+    offset: 0
+    unit: "mm"
+    signed: false
+    description: "Candidate: PDC rear-right distance"
+    source: "VAG community patterns; validate on T6.1"
+
+  # Pop-top roof (California) — candidate
+  - can_id: 0x4B0
+    name: "roof_open_candidate"
+    entity_type: binary_sensor
+    byte_offset: 0
+    bit_offset: 0
+    bit_length: 1
+    description: "Candidate: Pop-top roof open"
+    source: "Community patterns; validate on T6.1 California"
+
+  - can_id: 0x4B0
+    name: "roof_locked_candidate"
+    entity_type: binary_sensor
+    byte_offset: 0
+    bit_offset: 1
+    bit_length: 1
+    description: "Candidate: Roof locks engaged"
+    source: "Community patterns; validate on T6.1 California"
+
+  # Water system (California) — candidate
+  - can_id: 0x510
+    name: "fresh_water_level_candidate"
+    entity_type: sensor
+    byte_offset: 0
+    bit_offset: 0
+    bit_length: 8
+    scale: 0.392156
+    offset: 0
+    unit: "%"
+    signed: false
+    description: "Candidate: Fresh water tank level"
+    source: "Community patterns; validate on T6.1 California"
+
+  - can_id: 0x511
+    name: "water_pump_on_candidate"
+    entity_type: binary_sensor
+    byte_offset: 0
+    bit_offset: 0
+    bit_length: 1
+    description: "Candidate: Water pump running"
+    source: "Community patterns; validate on T6.1 California"
+
+filter_presets:
+  candidates:
+    description: "Candidate Comfort‑CAN IDs for quick filtering"
+    can_ids: [0x371, 0x3B0, 0x3B2, 0x4B0, 0x510, 0x511, 0x571, 0x6C0]
+
